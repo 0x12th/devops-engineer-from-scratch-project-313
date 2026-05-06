@@ -1,0 +1,9 @@
+{
+  "scripts": {
+    "frontend": "start-hexlet-devops-deploy-crud-frontend"
+  },
+  "dependencies": {
+    "@hexlet/project-devops-deploy-crud-frontend": "^1.0.0",
+    "concurrently": "^8.2.2"
+  }
+}
