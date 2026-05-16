@@ -13,3 +13,4 @@ build/
 tmp/
 coverage/
 .coverage
+.dev

@@ -1,9 +1,7 @@
 PORT ?= 8080
 FRAMEWORK ?= flask
 
-.PHONY: setup install install-hooks run run-backend run-frontend test lint pre-commit
-
-setup: install
+.PHONY: setup install install-hooks run run-backend run-frontend lint pre-commit
 
 install:
 	uv sync
@@ -20,9 +18,6 @@ run-backend:
 
 run-frontend:
 	npx start-hexlet-devops-deploy-crud-frontend
-
-test:
-	uv run pytest
 
 lint:
 	uv run ruff check .

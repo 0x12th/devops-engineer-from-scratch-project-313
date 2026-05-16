@@ -1,33 +1,42 @@
-FROM node:22-bookworm AS frontend
+FROM node:20-bookworm-slim AS frontend
 
 WORKDIR /app
-COPY package.json ./
-RUN npm install
-RUN mkdir -p /app/public && cp -r ./node_modules/@hexlet/project-devops-deploy-crud-frontend/dist/. /app/public/
 
-FROM python:3.12-slim AS app
+COPY package.json package-lock.json* ./
+RUN npm ci --omit=dev 2>/dev/null || npm install --omit=dev
+
+RUN cp -r ./node_modules/@hexlet/project-devops-deploy-crud-frontend/dist/. /app/public/
+
+FROM python:3.12-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8080 \
-    BACKEND_PORT=8080
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nginx curl ca-certificates \
+    && curl -LsSf https://astral.sh/uv/install.sh | sh \
+    && mv /root/.local/bin/uv /usr/local/bin/uv \
+    && rm -rf /root/.local \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -f /etc/nginx/sites-enabled/default
 
 WORKDIR /app
 
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends nginx curl \
-    && rm -rf /var/lib/apt/lists/*
+COPY pyproject.toml uv.lock* ./
+RUN uv sync --no-dev --no-install-project
+ENV PATH="/app/.venv/bin:$PATH"
 
-RUN pip install --no-cache-dir uv
-COPY pyproject.toml uv.lock README.md ./
-RUN uv sync --frozen --no-dev
+COPY app/ ./app
 
-COPY . .
 COPY --from=frontend /app/public /app/public
-COPY .configs/nginx.conf /etc/nginx/nginx.conf.template
-COPY .scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
-RUN chmod +x /app/docker-entrypoint.sh
 
-EXPOSE 8080
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["/app/docker-entrypoint.sh"]
+COPY entrypoint.sh /entrypoint.sh
+RUN sed -i 's/\r$//' /entrypoint.sh && chmod +x /entrypoint.sh
+
+EXPOSE 80
+
+CMD ["/entrypoint.sh"]

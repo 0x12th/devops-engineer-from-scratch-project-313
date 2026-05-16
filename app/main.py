@@ -3,7 +3,7 @@ import os
 from flask import Flask, Response, jsonify
 from flask_cors import CORS
 
-from app.db import create_db_engine, init_db
+from app.db import get_engine, init_db
 from app.routes import create_routes
 
 
@@ -13,12 +13,15 @@ def create_app() -> Flask:
 
     CORS(
         flask_app,
-        resources={r"/api/*": {"origins": ["http://localhost:5173"]}, r"/r/*": {"origins": "*"}},
+        resources={
+            r"/api/*": {"origins": ["http://localhost:5173"]},
+            r"/r/*": {"origins": "*"},
+        },
         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
-    engine = create_db_engine()
+    engine = get_engine()
     init_db(engine)
     flask_app.register_blueprint(create_routes(engine))
 
@@ -37,5 +40,5 @@ app = create_app()
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "8080"))
+    port = int(os.getenv("BACKEND_PORT", "8080"))
     app.run(host="0.0.0.0", port=port)

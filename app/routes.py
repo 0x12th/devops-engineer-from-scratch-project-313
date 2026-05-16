@@ -25,7 +25,9 @@ def create_routes(engine: Engine) -> Blueprint:
         limit = end - start + 1
         with Session(engine) as session:
             total = session.exec(select(func.count()).select_from(Link)).one()
-            links = session.exec(select(Link).order_by(Link.id).offset(start).limit(limit)).all()
+            links = session.exec(
+                select(Link).order_by(Link.id).offset(start).limit(limit)
+            ).all()
 
         headers = {
             "Accept-Ranges": "links",
@@ -108,7 +110,9 @@ def create_routes(engine: Engine) -> Blueprint:
     @routes.get("/r/<short_name>")
     def redirect_short_link(short_name: str) -> tuple[Response, int]:
         with Session(engine) as session:
-            link = session.exec(select(Link).where(Link.short_name == short_name)).first()
+            link = session.exec(
+                select(Link).where(Link.short_name == short_name)
+            ).first()
             if link is None:
                 return jsonify({"error": "link not found"}), 404
             return Response(status=302, headers={"Location": link.original_url})
